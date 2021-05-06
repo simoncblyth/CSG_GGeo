@@ -23,13 +23,19 @@
 #include "CSG_GGeo_Convert.h"
 
 
-CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_, bool dump_ ) 
+CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_, bool reverse_ ) 
     : 
     foundry(foundry_),
     ggeo(ggeo_),
-    dump(dump_),
+    reverse(reverse_),
     splay(SSys::getenvfloat("SPLAY", 0.f ))
 {
+    std::cout 
+        << "CSG_GGeo_Convert::CSG_GGeo_Convert"
+        << " reverse " << reverse
+        << " splay " << splay
+        << std::endl 
+        ;  
 }
 
 
@@ -60,7 +66,7 @@ void CSG_GGeo_Convert::convert_()
     unsigned numRepeat = ggeo->getNumMergedMesh(); 
     for(unsigned repeatIdx=0 ; repeatIdx < numRepeat ; repeatIdx++)
     {
-        convert_(repeatIdx); 
+        convert_(reverse ? numRepeat - 1 - repeatIdx : repeatIdx ); 
     }
 }
 

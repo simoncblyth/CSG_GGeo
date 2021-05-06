@@ -28,12 +28,12 @@ int main(int argc, char** argv)
     Opticks ok(argc, argv);
     ok.configure(); 
 
-    bool dump = false ; 
+    bool reverse = SSys::getenvbool("REVERSE", false) ; 
     GGeo* ggeo = GGeo::Load(&ok); 
     //ggeo->dumpParts("CSG_GGeo.main", repeatIdx, primIdx, partIdxRel ) ;
 
     CSGFoundry foundry ; 
-    CSG_GGeo_Convert conv(&foundry, ggeo, dump) ; 
+    CSG_GGeo_Convert conv(&foundry, ggeo, reverse ) ; 
     conv.convert(repeatIdx, primIdx, partIdxRel); 
 
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 

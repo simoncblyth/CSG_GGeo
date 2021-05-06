@@ -12,12 +12,12 @@ struct CSG_GGeo_Convert
 {   
     CSGFoundry* foundry ; 
     const GGeo* ggeo ; 
-    bool dump ; 
+    bool reverse ; 
     float splay ; 
 
     static const char* Label(unsigned repeatIdx ); 
 
-    CSG_GGeo_Convert(CSGFoundry* foundry, const GGeo* ggeo, bool dump ) ; 
+    CSG_GGeo_Convert(CSGFoundry* foundry, const GGeo* ggeo, bool reverse ) ; 
 
     void convert(int repeatIdx,  int primIdx, int partIdxRel );
     void convert_();
