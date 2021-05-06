@@ -119,15 +119,20 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
         << " num_inst " << num_inst 
         ;   
 
-    CSGSolid* so = foundry->addSolid(numPrim, label );
+    CSGSolid* so = foundry->addSolid(numPrim, label );  // primOffset captured into CSGSolid 
     assert(so); 
 
     AABB bb = {} ;
 
     for(unsigned primIdx=0 ; primIdx < numPrim ; primIdx++)
     {   
-        CSGPrim* p = convert_(comp, primIdx); 
-        bb.include_aabb( p->AABB() );
+        CSGPrim* prim = convert_(comp, primIdx); 
+        bb.include_aabb( prim->AABB() );
+    
+        unsigned globalPrimIdx = so->primOffset + primIdx ; 
+        prim->setSbtIndexOffset(globalPrimIdx) ;
+
+        LOG(info) << prim->desc() ;
     }   
     so->center_extent = bb.center_extent() ;  
 
@@ -146,27 +151,20 @@ CSGPrim* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx )
     unsigned numPrim = comp->getNumPrim();
     assert( primIdx < numPrim ); 
     unsigned numParts = comp->getNumParts(primIdx) ;
-    unsigned sbtIdx = primIdx ; // should be absolute ?
 
     // on adding a prim the node/tran/plan offsets are captured into the Prim 
     // from the sizes of the foundry vectors
-    CSGPrim* pr = foundry->addPrim(numParts);   
-    assert(pr) ; 
-    pr->setSbtIndexOffset(sbtIdx) ;
+    CSGPrim* prim = foundry->addPrim(numParts);   
+    assert(prim) ; 
 
     AABB bb = {} ;
-
     for(unsigned partIdxRel=0 ; partIdxRel < numParts ; partIdxRel++ )
     {
         CSGNode* n = convert_(comp, primIdx, partIdxRel); 
         bb.include_aabb( n->AABB() );   
     }
-
-    pr->setAABB( bb.data() ); 
-
-    LOG(info) << pr->desc() ;
-
-    return pr ; 
+    prim->setAABB( bb.data() ); 
+    return prim ; 
 }
 
 
