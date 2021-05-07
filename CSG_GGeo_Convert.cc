@@ -23,11 +23,11 @@
 #include "CSG_GGeo_Convert.h"
 
 
-CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_, bool reverse_ ) 
+CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_ ) 
     : 
     foundry(foundry_),
     ggeo(ggeo_),
-    reverse(reverse_),
+    reverse(SSys::getenvbool("REVERSE")),
     splay(SSys::getenvfloat("SPLAY", 0.f ))
 {
     std::cout 
@@ -38,25 +38,39 @@ CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_, bool
         ;  
 }
 
-
 void CSG_GGeo_Convert::convert(int repeatIdx,  int primIdx, int partIdxRel )
 {
-    if( repeatIdx > -1 && primIdx > -1 && partIdxRel > -1 )  // fully defined : convert just a single node
+
+    if( repeatIdx > -1 || primIdx > -1 || partIdxRel > -1 )
+    {
+        LOG(info) 
+            << " CAUTION : partial geometry conversions are for debugging only " 
+            << " repeatIdx " << repeatIdx
+            << " primIdx " << primIdx
+            << " partIdxRel " << partIdxRel
+            ; 
+    }
+
+    if( repeatIdx > -1 && primIdx > -1 && partIdxRel > -1 )  
     {   
+        LOG(info) << "fully defined : convert just a single node " ; 
         const GParts* comp = ggeo->getCompositeParts(repeatIdx) ; 
         convert_(comp, primIdx, partIdxRel);
     }
-    else if( repeatIdx > -1 && primIdx > -1  )   // convert all nodes in a single Prim 
+    else if( repeatIdx > -1 && primIdx > -1  )   
     {   
+        LOG(info) << "convert all nodes in a single Prim " ; 
         const GParts* comp = ggeo->getCompositeParts(repeatIdx) ; 
         convert_(comp, primIdx);
     }
-    else if( repeatIdx > -1 )   // convert all Prim in a single repeat composite "Solid"
+    else if( repeatIdx > -1 )  
     {   
+        LOG(info) << " convert all Prim in a single repeat composite Solid " ; 
         convert_(repeatIdx);
     }
-    else                        // convert all composite "Solid"
+    else                
     { 
+        LOG(info) << "convert all solids (default)" ; 
         convert_();
     }
 } 
@@ -142,7 +156,7 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
     }   
     so->center_extent = bb.center_extent() ;  
 
-    //addInstances(repeatIdx); 
+    addInstances(repeatIdx); 
 
     LOG(info) << " solid.bb " <<  bb ;
     LOG(info) << " solid.ce " << so->center_extent ;

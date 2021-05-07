@@ -1,4 +1,3 @@
-
 #include "SSys.hh"
 #include "OPTICKS_LOG.hh"
 #include "Opticks.hh"
@@ -17,23 +16,14 @@ int main(int argc, char** argv)
     int primIdx = -1 ; 
     int partIdxRel = -1 ; 
 
-    if( repeatIdx != -1 )
-    {
-        LOG(info) 
-            << " CAUTION : partial geometry conversions are for debugging only " 
-            << " repeatIdx " << repeatIdx
-            ; 
-    }
-
     Opticks ok(argc, argv);
     ok.configure(); 
 
-    bool reverse = SSys::getenvbool("REVERSE", false) ; 
     GGeo* ggeo = GGeo::Load(&ok); 
     //ggeo->dumpParts("CSG_GGeo.main", repeatIdx, primIdx, partIdxRel ) ;
 
     CSGFoundry foundry ; 
-    CSG_GGeo_Convert conv(&foundry, ggeo, reverse ) ; 
+    CSG_GGeo_Convert conv(&foundry, ggeo) ; 
     conv.convert(repeatIdx, primIdx, partIdxRel); 
 
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 
@@ -49,6 +39,3 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
-
-
