@@ -1,5 +1,17 @@
 #!/bin/bash -l
 
+usage(){ cat << EOU
+
+::
+
+    ./run.sh
+    ./run.sh -e ~8,      # skip conversion of mm 8      FAILS to render because of getGAS lookup fail
+    ./run.sh -e ~8,9     # skip conversion of mm 8,9    renders OK because no gaps 
+
+EOU
+}
+
+
 msg="=== $BASH_SOURCE :"
 sdir=$(pwd)
 name=$(basename $sdir) 
