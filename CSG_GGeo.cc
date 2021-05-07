@@ -12,30 +12,22 @@ int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
-    int repeatIdx = argc > 1 ? atoi(argv[1]) : -1 ;   
-    int primIdx = -1 ; 
-    int partIdxRel = -1 ; 
-
     Opticks ok(argc, argv);
     ok.configure(); 
 
     GGeo* ggeo = GGeo::Load(&ok); 
-    //ggeo->dumpParts("CSG_GGeo.main", repeatIdx, primIdx, partIdxRel ) ;
 
     CSGFoundry foundry ; 
     CSG_GGeo_Convert conv(&foundry, ggeo) ; 
-    conv.convert(repeatIdx, primIdx, partIdxRel); 
+    conv.convert(); 
 
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 
     const char* rel = "CSGFoundry" ; 
-    // expects existing directory $CFBASE/CSGFoundry 
 
-    foundry.write(cfbase, rel );    
+    foundry.write(cfbase, rel );    // expects existing directory $CFBASE/CSGFoundry 
 
-    // read back the foundary and check identical bytes
-    CSGFoundry* fd = CSGFoundry::Load(cfbase, rel); 
-    int cmp = CSGFoundry::Compare(&foundry, fd );  
-    assert( cmp == 0 ); 
+    CSGFoundry* fd = CSGFoundry::Load(cfbase, rel);  // load foundary and check identical bytes
+    assert( 0 == CSGFoundry::Compare(&foundry, fd ) );  
 
     return 0 ; 
 }

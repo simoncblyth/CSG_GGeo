@@ -1,5 +1,7 @@
 #pragma once
 
+#include "plog/Severity.h"
+
 struct CSGFoundry ;
 struct CSGSolid ; 
 struct CSGPrim ; 
@@ -10,8 +12,12 @@ class GParts ;
 
 struct CSG_GGeo_Convert
 {   
+    static const plog::Severity LEVEL ; 
+
     CSGFoundry* foundry ; 
     const GGeo* ggeo ; 
+    const Opticks* ok ; 
+
     bool reverse ; 
     float splay ; 
 
@@ -19,7 +25,7 @@ struct CSG_GGeo_Convert
 
     CSG_GGeo_Convert(CSGFoundry* foundry, const GGeo* ggeo ) ; 
 
-    void convert(int repeatIdx,  int primIdx, int partIdxRel );
+    void convert(int repeatIdx=-1,  int primIdx=-1, int partIdxRel=-1 );
     void convert_();
 
     CSGSolid* convert_(unsigned repeatIdx );

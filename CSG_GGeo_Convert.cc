@@ -6,6 +6,8 @@
 #include "NGLMExt.hpp"
 #include "GLMFormat.hpp"
 
+#include "Opticks.hh"
+
 #include "GGeo.hh"
 #include "GGeoLib.hh"
 #include "GParts.hh"
@@ -23,10 +25,14 @@
 #include "CSG_GGeo_Convert.h"
 
 
+const plog::Severity CSG_GGeo_Convert::LEVEL = PLOG::EnvLevel("CSG_GGeo_Convert", "DEBUG"); 
+
+
 CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_ ) 
     : 
     foundry(foundry_),
     ggeo(ggeo_),
+    ok(ggeo->getOpticks()),
     reverse(SSys::getenvbool("REVERSE")),
     splay(SSys::getenvfloat("SPLAY", 0.f ))
 {
@@ -80,7 +86,15 @@ void CSG_GGeo_Convert::convert_()
     unsigned numRepeat = ggeo->getNumMergedMesh(); 
     for(unsigned repeatIdx=0 ; repeatIdx < numRepeat ; repeatIdx++)
     {
-        convert_(reverse ? numRepeat - 1 - repeatIdx : repeatIdx ); 
+        if(ok->isEnabledMergedMesh(repeatIdx))
+        {
+            LOG(error) << "proceeding with convert for repeatIdx " << repeatIdx ;  
+            convert_(reverse ? numRepeat - 1 - repeatIdx : repeatIdx ); 
+        }
+        else
+        {
+            LOG(error) << "skipping convert for repeatIdx " << repeatIdx ;  
+        }
     }
 }
 
@@ -91,12 +105,7 @@ void CSG_GGeo_Convert::addInstances(unsigned repeatIdx )
     const GMergedMesh* mm = ggeo->getMergedMesh(repeatIdx); 
     unsigned num_inst = mm->getNumITransforms() ;
 
-    LOG(info)
-        << " nmm " << nmm
-        << " repeatIdx " << repeatIdx
-        << " num_inst " << num_inst 
-        ;
-
+    //LOG(LEVEL) << " nmm " << nmm << " repeatIdx " << repeatIdx << " num_inst " << num_inst ; 
 
     for(unsigned i=0 ; i < num_inst ; i++)
     {
@@ -152,14 +161,13 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
         unsigned globalPrimIdx = so->primOffset + primIdx ; 
         prim->setSbtIndexOffset(globalPrimIdx) ;
 
-        LOG(info) << prim->desc() ;
+        //LOG(info) << prim->desc() ;
     }   
     so->center_extent = bb.center_extent() ;  
 
     addInstances(repeatIdx); 
 
     LOG(info) << " solid.bb " <<  bb ;
-    LOG(info) << " solid.ce " << so->center_extent ;
     LOG(info) << " solid.desc " << so->desc() ;
 
     return so ; 
@@ -206,7 +214,7 @@ partIdxRel
 
 CSGNode* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx, unsigned partIdxRel )
 {
-    unsigned repeatIdx = comp->getRepeatIndex();  // set in GGeo::deferredCreateGParts
+    //unsigned repeatIdx = comp->getRepeatIndex();  // set in GGeo::deferredCreateGParts
     unsigned partOffset = comp->getPartOffset(primIdx) ;
     unsigned partIdx = partOffset + partIdxRel ;
     unsigned idx = comp->getIndex(partIdx);
@@ -241,6 +249,7 @@ CSGNode* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx, unsign
 
     const float* param = comp->getPartValues(partIdx, 0, 0 );  
 
+    /*
     LOG(info) 
         << CSGNode::Addr(repeatIdx, primIdx, partIdxRel )
         << " partIdx " << std::setw(3) << partIdx
@@ -249,6 +258,8 @@ CSGNode* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx, unsign
         << " tranIdx " << std::setw(4) << tranIdx 
         << " tv " <<  ( tv ? tv->brief() : "-" )  
         ; 
+
+    */
 
     const float* aabb = nullptr ;  
     CSGNode* n = foundry->addNode(CSGNode::Make(tc, param, aabb ));
