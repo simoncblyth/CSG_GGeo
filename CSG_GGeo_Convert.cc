@@ -36,11 +36,9 @@ CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_ )
     reverse(SSys::getenvbool("REVERSE")),
     splay(SSys::getenvfloat("SPLAY", 0.f ))
 {
-    std::cout 
-        << "CSG_GGeo_Convert::CSG_GGeo_Convert"
+    LOG(info) 
         << " reverse " << reverse
         << " splay " << splay
-        << std::endl 
         ;  
 }
 
@@ -179,10 +177,12 @@ CSGPrim* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx )
     unsigned numPrim = comp->getNumPrim();
     assert( primIdx < numPrim ); 
     unsigned numParts = comp->getNumParts(primIdx) ;
+    unsigned meshIdx = comp->getMeshIndex(primIdx);    // aka lvIdx
 
     // on adding a prim the node/tran/plan offsets are captured into the Prim 
     // from the sizes of the foundry vectors
-    CSGPrim* prim = foundry->addPrim(numParts);   
+
+    CSGPrim* prim = foundry->addPrim(numParts, meshIdx );   
     assert(prim) ; 
 
     AABB bb = {} ;
