@@ -158,6 +158,8 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
     
         unsigned globalPrimIdx = so->primOffset + primIdx ; 
         prim->setSbtIndexOffset(globalPrimIdx) ;
+        prim->setRepeatIdx(repeatIdx); 
+        prim->setPrimIdx(primIdx); 
 
         //LOG(info) << prim->desc() ;
     }   
