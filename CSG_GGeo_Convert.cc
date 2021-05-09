@@ -40,7 +40,21 @@ CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_ )
         << " reverse " << reverse
         << " splay " << splay
         ;  
+
+    init(); 
 }
+
+
+void CSG_GGeo_Convert::init()
+{
+    ggeo->getMeshNames(foundry->name); 
+    LOG(info) 
+       << std::endl
+       << " foundry.name.size " << foundry->name.size() 
+       ;
+}
+
+
 
 void CSG_GGeo_Convert::convert(int repeatIdx,  int primIdx, int partIdxRel )
 {

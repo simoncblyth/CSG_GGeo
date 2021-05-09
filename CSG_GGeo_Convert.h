@@ -24,6 +24,7 @@ struct CSG_GGeo_Convert
     static const char* Label(unsigned repeatIdx ); 
 
     CSG_GGeo_Convert(CSGFoundry* foundry, const GGeo* ggeo ) ; 
+    void init();
 
     void convert(int repeatIdx=-1,  int primIdx=-1, int partIdxRel=-1 );
     void convert_();
