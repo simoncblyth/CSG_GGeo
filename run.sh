@@ -4,9 +4,16 @@ usage(){ cat << EOU
 
 ::
 
-    ./run.sh
-    ./run.sh -e ~8,      # skip conversion of mm 8      FAILS to render because of getGAS lookup fail
-    ./run.sh -e ~8,9     # skip conversion of mm 8,9    renders OK because no gaps 
+    ./run.sh --gparts_transform_offset 
+
+    GDB=lldb_ ./run.sh -- --gparts_transform_offset
+
+
+Now that -e option works at CSGOptiX level where the
+CF geometry is uploaded to GPU there 
+is no point to do that here and bake it into the 
+persisted CSGFoundry geometry. As would then need
+to manage lots of different directories of CF geometry.
 
 EOU
 }
@@ -25,7 +32,7 @@ mkdir -p $logdir
 
 cd $logdir
 which $name
-$name $*
+$GDB $name $*
 
 echo $msg outdir:$outdir
 ls -l $outdir/
