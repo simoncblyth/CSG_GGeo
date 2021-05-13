@@ -23,6 +23,8 @@ msg="=== $BASH_SOURCE :"
 sdir=$(pwd)
 name=$(basename $sdir) 
 
+#export ONE_PRIM_SOLID=1 # adds extra debugging solids that reuse existing prim one-by-one
+
 export CFBASE=/tmp/$USER/opticks/CSG_GGeo
 outdir=${CFBASE}/CSGFoundry
 logdir=${CFBASE}/logs

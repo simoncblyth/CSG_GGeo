@@ -21,7 +21,6 @@ struct CSG_GGeo_Convert
     bool reverse ; 
     float splay ; 
 
-    static const char* Label(unsigned repeatIdx ); 
 
     CSG_GGeo_Convert(CSGFoundry* foundry, const GGeo* ggeo ) ; 
     void init();
@@ -34,6 +33,12 @@ struct CSG_GGeo_Convert
 
     CSGPrim*  convert_(const GParts* comp, unsigned primIdx );
     CSGNode*  convert_(const GParts* comp, unsigned primIdx, unsigned partIdxRel );
+
+
+    // below is called non-standardly during debugging when envvar ONE_PRIM_SOLID is defined 
+    void addOnePrimSolid();
+    void addOnePrimSolid(unsigned solidIdx);
+
 };
 
 

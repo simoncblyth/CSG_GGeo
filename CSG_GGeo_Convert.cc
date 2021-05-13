@@ -132,14 +132,6 @@ void CSG_GGeo_Convert::addInstances(unsigned repeatIdx )
 }
 
 
-const char* CSG_GGeo_Convert::Label(unsigned repeatIdx ) // static
-{
-    std::stringstream ss ; 
-    ss << "r" << std::setfill('0') << std::setw(3) << repeatIdx ; 
-    std::string s = ss.str();  
-    return strdup(s.c_str()) ; 
-}
-
 
 CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
 {
@@ -150,17 +142,17 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
 
     const GParts* comp = ggeo->getCompositeParts(repeatIdx) ; 
     unsigned numPrim = comp->getNumPrim();
-    const char* label = CSG_GGeo_Convert::Label(repeatIdx) ; 
+    std::string rlabel = CSGSolid::MakeLabel('r',repeatIdx) ; 
 
     LOG(info)
         << " repeatIdx " << repeatIdx 
         << " nmm " << nmm
         << " numPrim " << numPrim
-        << " label " << label 
+        << " rlabel " << rlabel 
         << " num_inst " << num_inst 
         ;   
 
-    CSGSolid* so = foundry->addSolid(numPrim, label );  // primOffset captured into CSGSolid 
+    CSGSolid* so = foundry->addSolid(numPrim, rlabel.c_str() );  // primOffset captured into CSGSolid 
     assert(so); 
 
     AABB bb = {} ;
@@ -294,4 +286,77 @@ CSGNode* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx, unsign
 
 }
 
+
+
+/**
+CSG_GGeo_Convert::addOnePrimSolid
+-------------------------------------
+
+CSGSolid typically have multiple Prim, in case of the remainder solid (solidIdx 0) 
+there can even be thousands of Prim in a single "Solid".
+
+For debugging purposes it is useful to add extra solids that each have only a single 
+CSGPrim allowing rendering of each "layer" of a Solid without adding separate 
+code paths to do this, just reusing the existing machinery applied to the extra  solids.
+
+Note that repeatIdx/solidIdx/gasIdx are mostly referring to the same thing 
+with nuances of which stage they are at. 
+**/
+
+
+
+void CSG_GGeo_Convert::addOnePrimSolid(unsigned solidIdx)
+{
+    const CSGSolid* orig = foundry->getSolid(solidIdx);    
+
+    if(orig->numPrim == 1 ) 
+    {
+        LOG(info) << "already single prim solid, no point adding another" ; 
+        return ; 
+    }  
+
+    for(unsigned primIdx=orig->primOffset ; primIdx < orig->primOffset+orig->numPrim ; primIdx++)  
+    {
+
+        std::string plabel = CSGSolid::MakeLabel('p', primIdx ) ;   
+
+        unsigned numPrim = 1 ; 
+        int primOffset_ = primIdx ;   // note absolute primIdx
+
+        unsigned primIdxRel = primIdx - orig->primOffset ; 
+
+
+        // NB not adding Prim just reusing pre-existing in separate Solid
+        CSGSolid* pso = foundry->addSolid(numPrim, plabel.c_str(), primOffset_ ); 
+
+        AABB bb = {} ;
+        const CSGPrim* prim = foundry->getPrim(primIdx) ; //  note absolute primIdx
+        bb.include_aabb( prim->AABB() );
+
+        pso->center_extent = bb.center_extent() ;  
+
+        pso->type = ONE_PRIM_SOLID ; 
+        pso->origin_solidIdx  = solidIdx ;
+        pso->origin_primIdxRel = primIdxRel ;
+        pso->origin_nodeIdxRel = -1 ;
+
+        LOG(info) << pso->desc() ;  
+    }   
+}
+
+
+
+
+void CSG_GGeo_Convert::addOnePrimSolid()
+{
+    unsigned num_solid_standard = foundry->getNumSolid(STANDARD_SOLID) ; 
+
+    LOG(error) << "foundry.desc before " << foundry->desc(); 
+    for(unsigned solidIdx=1 ; solidIdx < num_solid_standard ; solidIdx++)   // skip 0 remainders for now
+    {
+        addOnePrimSolid(solidIdx);       
+    }
+    LOG(error) << "foundry.desc after " << foundry->desc(); 
+
+}
 

@@ -21,6 +21,10 @@ int main(int argc, char** argv)
     CSG_GGeo_Convert conv(&foundry, ggeo) ; 
     conv.convert(); 
 
+    bool ops = SSys::getenvbool("ONE_PRIM_SOLID"); 
+    if(ops) conv.addOnePrimSolid(); 
+
+
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 
     const char* rel = "CSGFoundry" ; 
 
