@@ -6,6 +6,8 @@ usage(){ cat << EOU
 
     ./run.sh --gparts_transform_offset 
 
+    ONE_PRIM_SOLID=1 ./run.sh --gparts_transform_offset 
+
     GDB=lldb_ ./run.sh -- --gparts_transform_offset
 
 

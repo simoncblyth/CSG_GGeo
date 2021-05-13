@@ -317,17 +317,15 @@ void CSG_GGeo_Convert::addOnePrimSolid(unsigned solidIdx)
 
     for(unsigned primIdx=orig->primOffset ; primIdx < orig->primOffset+orig->numPrim ; primIdx++)  
     {
-
-        std::string plabel = CSGSolid::MakeLabel('p', primIdx ) ;   
-
         unsigned numPrim = 1 ; 
         int primOffset_ = primIdx ;   // note absolute primIdx
 
         unsigned primIdxRel = primIdx - orig->primOffset ; 
 
+        std::string rp_label = CSGSolid::MakeLabel('r', solidIdx, 'p', primIdxRel ) ;   
 
         // NB not adding Prim just reusing pre-existing in separate Solid
-        CSGSolid* pso = foundry->addSolid(numPrim, plabel.c_str(), primOffset_ ); 
+        CSGSolid* pso = foundry->addSolid(numPrim, rp_label.c_str(), primOffset_ ); 
 
         AABB bb = {} ;
         const CSGPrim* prim = foundry->getPrim(primIdx) ; //  note absolute primIdx
