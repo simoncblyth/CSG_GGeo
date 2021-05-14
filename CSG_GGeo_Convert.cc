@@ -451,7 +451,7 @@ void CSG_GGeo_Convert::addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsi
 {
     const CSGPrim* prim = foundry->getPrim(primIdx);      
 
-    for(unsigned nodeIdxRel=0 ; nodeIdxRel < prim->numNode() ; nodeIdxRel++ )
+    for(unsigned nodeIdxRel=0 ; nodeIdxRel < unsigned(prim->numNode()) ; nodeIdxRel++ )
     {
         unsigned nodeIdx = prim->nodeOffset() + nodeIdxRel ; 
 
