@@ -39,6 +39,11 @@ struct CSG_GGeo_Convert
     void addOnePrimSolid();
     void addOnePrimSolid(unsigned solidIdx);
 
+    // below is called non-standardly during debugging when envvar ONE_NODE_SOLID is defined 
+    void addOneNodeSolid();
+    void addOneNodeSolid(unsigned solidIdx);
+    void addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsigned primIdxRel);
+
 };
 
 

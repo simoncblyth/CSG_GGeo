@@ -24,6 +24,9 @@ int main(int argc, char** argv)
     bool ops = SSys::getenvbool("ONE_PRIM_SOLID"); 
     if(ops) conv.addOnePrimSolid(); 
 
+    bool ons = SSys::getenvbool("ONE_NODE_SOLID"); 
+    if(ons) conv.addOneNodeSolid(); 
+
 
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 
     const char* rel = "CSGFoundry" ; 

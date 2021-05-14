@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <vector>
 
+#include "SStr.hh"
 #include "SSys.hh"
 #include "NGLMExt.hpp"
 #include "GLMFormat.hpp"
@@ -315,7 +316,7 @@ void CSG_GGeo_Convert::addOnePrimSolid(unsigned solidIdx)
         return ; 
     }  
 
-    for(unsigned primIdx=orig->primOffset ; primIdx < orig->primOffset+orig->numPrim ; primIdx++)  
+    for(unsigned primIdx=orig->primOffset ; primIdx < unsigned(orig->primOffset+orig->numPrim) ; primIdx++)  
     {
         unsigned numPrim = 1 ; 
         int primOffset_ = primIdx ;   // note absolute primIdx
@@ -349,12 +350,142 @@ void CSG_GGeo_Convert::addOnePrimSolid()
 {
     unsigned num_solid_standard = foundry->getNumSolid(STANDARD_SOLID) ; 
 
+    std::vector<unsigned> one_prim_solid ; 
+    SStr::GetEVector(one_prim_solid, "ONE_PRIM_SOLID", "1,2,3,4,5,6,7,8" ); 
+
     LOG(error) << "foundry.desc before " << foundry->desc(); 
-    for(unsigned solidIdx=1 ; solidIdx < num_solid_standard ; solidIdx++)   // skip 0 remainders for now
+    for(unsigned i=0 ; i < one_prim_solid.size() ; i++)
     {
-        addOnePrimSolid(solidIdx);       
+        unsigned solidIdx = one_prim_solid[i] ; 
+        if( solidIdx < num_solid_standard )
+        {
+            addOnePrimSolid(solidIdx);       
+        }
+        else
+        {
+            LOG(error) << " requested ONE_PRIM_SOLID solidIdx out of range " << solidIdx ; 
+        }
+    }
+    LOG(error) << "foundry.desc after " << foundry->desc(); 
+}
+
+
+
+/**
+CSG_GGeo_Convert::addOneNodeSolid
+------------------------------------
+
+Unlike OnePrimSolid this needs to create 
+both the solid and the Prim which references a pre-existing Node.
+
+This makes sense for leaf nodes, but for operator nodes
+a single node solid makes no sense : would need to construct subtrees in that case 
+and also create new node sequences. This is because cannot partially reuse preexisting 
+node complete binary trees to form subtrees because the node order 
+would be wrong for subtrees.
+
+**/
+
+
+
+
+void CSG_GGeo_Convert::addOneNodeSolid()
+{
+    unsigned num_solid_standard = foundry->getNumSolid(STANDARD_SOLID) ; 
+
+    std::vector<unsigned> one_node_solid ; 
+    SStr::GetEVector(one_node_solid, "ONE_NODE_SOLID", "1,2,3,4,5,6,7,8" ); 
+
+    LOG(error) << "foundry.desc before " << foundry->desc(); 
+
+    for(unsigned i=0 ; i < one_node_solid.size() ; i++)
+    {
+        unsigned solidIdx = one_node_solid[i] ; 
+        if( solidIdx < num_solid_standard )
+        {
+            addOneNodeSolid(solidIdx);       
+        }
+        else
+        {
+            LOG(error) << " requested ONE_NODE_SOLID solidIdx out of range " << solidIdx ; 
+        }
     }
     LOG(error) << "foundry.desc after " << foundry->desc(); 
 
+}
+
+
+/**
+CSG_GGeo_Convert::addOneNodeSolid
+-------------------------------------
+
+Invokes the below addOneNodeSolid for each prim of the original solidIdx 
+
+**/
+
+void CSG_GGeo_Convert::addOneNodeSolid(unsigned solidIdx)
+{
+    LOG(info) << " solidIdx " << solidIdx ; 
+    const CSGSolid* orig = foundry->getSolid(solidIdx);    
+
+    for(unsigned primIdx=orig->primOffset ; primIdx < unsigned(orig->primOffset+orig->numPrim) ; primIdx++)  
+    {
+        unsigned primIdxRel = primIdx - orig->primOffset ; 
+
+        addOneNodeSolid(solidIdx, primIdx, primIdxRel);   
+    }   
+}
+
+
+/**
+CSG_GGeo_Convert::addOneNodeSolid
+-----------------------------------
+
+Adds solids for each non-operator leaf node of the Solid/Prim 
+identified by solidIdx/primIdx/primIdxRel with label of form "R1P0N0" 
+that shows the origin of this debugging solid. 
+
+**/
+
+void CSG_GGeo_Convert::addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsigned primIdxRel)
+{
+    const CSGPrim* prim = foundry->getPrim(primIdx);      
+
+    for(unsigned nodeIdxRel=0 ; nodeIdxRel < prim->numNode() ; nodeIdxRel++ )
+    {
+        unsigned nodeIdx = prim->nodeOffset() + nodeIdxRel ; 
+
+        const CSGNode* node = foundry->getNode(nodeIdx); 
+
+        if(node->is_operator() || node->is_zero()) continue ; 
+
+        AABB bb = {} ;
+        bb.include_aabb( node->AABB() );   
+
+        std::string rpn_label = CSGSolid::MakeLabel('R', solidIdx, 'P', primIdxRel, 'N', nodeIdxRel ) ;   
+
+        unsigned numPrim = 1 ;  
+        CSGSolid* rpn_solid = foundry->addSolid(numPrim, rpn_label.c_str()  ); 
+        rpn_solid->center_extent = bb.center_extent() ;  
+
+        int numNode = 1 ; 
+        int nodeOffset = nodeIdx ;   // re-using the node 
+
+        CSGPrim* rpn_prim = foundry->addPrim(numNode, prim->meshIdx(), nodeOffset ) ;  // TODO: meshIdx is metadata, it should not be in the above arglist 
+
+        rpn_prim->setAABB( bb.data() ); 
+        
+        //rpn_prim->setMeshIdx(prim->meshIdx()); 
+        rpn_prim->setRepeatIdx(prim->repeatIdx()); 
+        rpn_prim->setPrimIdx(prim->primIdx()); 
+
+        rpn_solid->type = ONE_NODE_SOLID ; 
+        rpn_solid->origin_solidIdx  = solidIdx ;
+        rpn_solid->origin_primIdxRel = primIdxRel ;
+        rpn_solid->origin_nodeIdxRel = nodeIdxRel ;
+        rpn_solid->center_extent = bb.center_extent() ;  
+
+        LOG(info) << rpn_solid->desc() ;  
+    }
 }
 
