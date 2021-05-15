@@ -191,14 +191,20 @@ CSGPrim* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx )
     // on adding a prim the node/tran/plan offsets are captured into the Prim 
     // from the sizes of the foundry vectors
 
-    CSGPrim* prim = foundry->addPrim(numParts, meshIdx );   
+    // TODO: suspect tran and plan offsets are not used, and should be removed
+    // as are always using absolute tran and plan addressing 
+    // also "meshIdx" is non-essential metadata, hence it should not be an argument to addPrim
+
+    int nodeOffset_ = -1 ; 
+    CSGPrim* prim = foundry->addPrim(numParts, nodeOffset_ );   
+    prim->setMeshIdx(meshIdx);   
     assert(prim) ; 
 
     AABB bb = {} ;
     for(unsigned partIdxRel=0 ; partIdxRel < numParts ; partIdxRel++ )
     {
         CSGNode* n = convert_(comp, primIdx, partIdxRel); 
-        bb.include_aabb( n->AABB() );   
+        bb.include_aabb( n->AABB() );   // HMM: what about big-small composites ?
     }
     prim->setAABB( bb.data() ); 
     return prim ; 
@@ -471,8 +477,8 @@ void CSG_GGeo_Convert::addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsi
         int numNode = 1 ; 
         int nodeOffset = nodeIdx ;   // re-using the node 
 
-        CSGPrim* rpn_prim = foundry->addPrim(numNode, prim->meshIdx(), nodeOffset ) ;  // TODO: meshIdx is metadata, it should not be in the above arglist 
-
+        CSGPrim* rpn_prim = foundry->addPrim(numNode, nodeOffset ) ; 
+        rpn_prim->setMeshIdx(prim->meshIdx()); 
         rpn_prim->setAABB( bb.data() ); 
         
         //rpn_prim->setMeshIdx(prim->meshIdx()); 
