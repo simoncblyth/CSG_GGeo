@@ -27,6 +27,9 @@ int main(int argc, char** argv)
     bool ons = SSys::getenvbool("ONE_NODE_SOLID"); 
     if(ons) conv.addOneNodeSolid(); 
 
+    bool dcs = SSys::getenvbool("DEEP_COPY_SOLID"); 
+    if(dcs) conv.addDeepCopySolid(); 
+
 
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 
     const char* rel = "CSGFoundry" ; 

@@ -160,11 +160,18 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
 
     for(unsigned primIdx=0 ; primIdx < numPrim ; primIdx++)
     {   
+        unsigned globalPrimIdx = so->primOffset + primIdx ;
+        unsigned globalPrimIdx_0 = foundry->getNumPrim() ; 
+        assert( globalPrimIdx == globalPrimIdx_0 ); 
+
         CSGPrim* prim = convert_(comp, primIdx); 
         bb.include_aabb( prim->AABB() );
-    
-        unsigned globalPrimIdx = so->primOffset + primIdx ; 
-        prim->setSbtIndexOffset(globalPrimIdx) ;
+
+        // prim->setSbtIndexOffset(globalPrimIdx) ; // now doing this in CSGFoundry::addPrim 
+
+        unsigned sbtIdx = prim->sbtIndexOffset() ; 
+        assert( sbtIdx == globalPrimIdx  );  
+
         prim->setRepeatIdx(repeatIdx); 
         prim->setPrimIdx(primIdx); 
 
@@ -207,6 +214,7 @@ CSGPrim* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx )
         bb.include_aabb( n->AABB() );   // HMM: what about big-small composites ?
     }
     prim->setAABB( bb.data() ); 
+
     return prim ; 
 }
 
@@ -392,9 +400,6 @@ would be wrong for subtrees.
 
 **/
 
-
-
-
 void CSG_GGeo_Convert::addOneNodeSolid()
 {
     unsigned num_solid_standard = foundry->getNumSolid(STANDARD_SOLID) ; 
@@ -493,5 +498,31 @@ void CSG_GGeo_Convert::addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsi
 
         LOG(info) << rpn_solid->desc() ;  
     }
+}
+
+
+
+void CSG_GGeo_Convert::addDeepCopySolid()
+{
+    unsigned num_solid_standard = foundry->getNumSolid(STANDARD_SOLID) ; 
+
+    std::vector<unsigned> deep_copy_solid ; 
+    SStr::GetEVector(deep_copy_solid, "DEEP_COPY_SOLID", "1,2,3,4" ); 
+
+    LOG(error) << "foundry.desc before " << foundry->desc(); 
+
+    for(unsigned i=0 ; i < deep_copy_solid.size() ; i++)
+    {
+        unsigned solidIdx = deep_copy_solid[i] ; 
+        if( solidIdx < num_solid_standard )
+        {
+            foundry->addDeepCopySolid(solidIdx);       
+        }
+        else
+        {
+            LOG(error) << " requested DEEP_COPY_SOLID solidIdx out of range " << solidIdx ; 
+        }
+    }
+    LOG(error) << "foundry.desc after " << foundry->desc(); 
 }
 

@@ -44,6 +44,10 @@ struct CSG_GGeo_Convert
     void addOneNodeSolid(unsigned solidIdx);
     void addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsigned primIdxRel);
 
+    // below is called non-standardly during debugging when envvar DEEP_COPY_SOLID is defined 
+    void addDeepCopySolid();
+
+
 };
 
 

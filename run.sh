@@ -34,9 +34,13 @@ logdir=${CFBASE}/logs
 mkdir -p $outdir 
 mkdir -p $logdir 
 
+
+GDBDIV=""
+[ -n "$GDB" ] && GDBDIV="--"
+
 cd $logdir
 which $name
-$GDB $name $*
+$GDB $name $GDBDIV $*
 
 echo $msg outdir:$outdir
 ls -l $outdir/
