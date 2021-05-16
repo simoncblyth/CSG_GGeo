@@ -349,10 +349,6 @@ void CSG_GGeo_Convert::addOnePrimSolid(unsigned solidIdx)
         pso->center_extent = bb.center_extent() ;  
 
         pso->type = ONE_PRIM_SOLID ; 
-        pso->origin_solidIdx  = solidIdx ;
-        pso->origin_primIdxRel = primIdxRel ;
-        pso->origin_nodeIdxRel = -1 ;
-
         LOG(info) << pso->desc() ;  
     }   
 }
@@ -491,9 +487,6 @@ void CSG_GGeo_Convert::addOneNodeSolid(unsigned solidIdx, unsigned primIdx, unsi
         rpn_prim->setPrimIdx(prim->primIdx()); 
 
         rpn_solid->type = ONE_NODE_SOLID ; 
-        rpn_solid->origin_solidIdx  = solidIdx ;
-        rpn_solid->origin_primIdxRel = primIdxRel ;
-        rpn_solid->origin_nodeIdxRel = nodeIdxRel ;
         rpn_solid->center_extent = bb.center_extent() ;  
 
         LOG(info) << rpn_solid->desc() ;  
