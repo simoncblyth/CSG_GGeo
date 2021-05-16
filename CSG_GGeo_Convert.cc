@@ -167,10 +167,9 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
         CSGPrim* prim = convert_(comp, primIdx); 
         bb.include_aabb( prim->AABB() );
 
-        // prim->setSbtIndexOffset(globalPrimIdx) ; // now doing this in CSGFoundry::addPrim 
-
         unsigned sbtIdx = prim->sbtIndexOffset() ; 
-        assert( sbtIdx == globalPrimIdx  );  
+        //assert( sbtIdx == globalPrimIdx  );  
+        assert( sbtIdx == primIdx  );  
 
         prim->setRepeatIdx(repeatIdx); 
         prim->setPrimIdx(primIdx); 
