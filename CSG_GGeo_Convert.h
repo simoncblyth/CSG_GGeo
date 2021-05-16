@@ -47,6 +47,8 @@ struct CSG_GGeo_Convert
     // below is called non-standardly during debugging when envvar DEEP_COPY_SOLID is defined 
     void addDeepCopySolid();
 
+    // below is called non-standardly during debugging when envvar KLUDGE_SCALE_PRIM_BBOX is defined 
+    void kludgeScalePrimBBox();
 
 };
 

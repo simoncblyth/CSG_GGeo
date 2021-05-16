@@ -30,6 +30,8 @@ int main(int argc, char** argv)
     bool dcs = SSys::getenvbool("DEEP_COPY_SOLID"); 
     if(dcs) conv.addDeepCopySolid(); 
 
+    bool ksb = SSys::getenvbool("KLUDGE_SCALE_PRIM_BBOX"); 
+    if(ksb) conv.kludgeScalePrimBBox();  
 
     const char* cfbase = SSys::getenvvar("CFBASE", "/tmp" ); 
     const char* rel = "CSGFoundry" ; 

@@ -526,3 +526,20 @@ void CSG_GGeo_Convert::addDeepCopySolid()
     LOG(error) << "foundry.desc after " << foundry->desc(); 
 }
 
+
+void CSG_GGeo_Convert::kludgeScalePrimBBox()
+{
+    const char* kludge_scale_prim_bbox = SSys::getenvvar("KLUDGE_SCALE_PRIM_BBOX", nullptr); 
+    assert(kludge_scale_prim_bbox);  
+    
+    LOG(error) << "foundry.desc before " << foundry->desc(); 
+
+    float dscale = 0.1f ; 
+    foundry->kludgeScalePrimBBox(kludge_scale_prim_bbox, dscale );
+
+    LOG(error) << "foundry.desc after " << foundry->desc(); 
+}
+
+
+
+
