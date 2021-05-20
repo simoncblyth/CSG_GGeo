@@ -34,12 +34,10 @@ CSG_GGeo_Convert::CSG_GGeo_Convert(CSGFoundry* foundry_, const GGeo* ggeo_ )
     foundry(foundry_),
     ggeo(ggeo_),
     ok(ggeo->getOpticks()),
-    reverse(SSys::getenvbool("REVERSE")),
-    splay(SSys::getenvfloat("SPLAY", 0.f ))
+    reverse(SSys::getenvbool("REVERSE"))
 {
     LOG(info) 
         << " reverse " << reverse
-        << " splay " << splay
         ;  
 
     init(); 
@@ -74,27 +72,27 @@ void CSG_GGeo_Convert::convert(int repeatIdx,  int primIdx, int partIdxRel )
     {   
         LOG(info) << "fully defined : convert just a single node " ; 
         const GParts* comp = ggeo->getCompositeParts(repeatIdx) ; 
-        convert_(comp, primIdx, partIdxRel);
+        convertNode(comp, primIdx, partIdxRel);
     }
     else if( repeatIdx > -1 && primIdx > -1  )   
     {   
         LOG(info) << "convert all nodes in a single Prim " ; 
         const GParts* comp = ggeo->getCompositeParts(repeatIdx) ; 
-        convert_(comp, primIdx);
+        convertPrim(comp, primIdx);
     }
     else if( repeatIdx > -1 )  
     {   
         LOG(info) << " convert all Prim in a single repeat composite Solid " ; 
-        convert_(repeatIdx);
+        convertSolid(repeatIdx);
     }
     else                
     { 
         LOG(info) << "convert all solids (default)" ; 
-        convert_();
+        convertAllSolid();
     }
 } 
 
-void CSG_GGeo_Convert::convert_()
+void CSG_GGeo_Convert::convertAllSolid()
 {
     unsigned numRepeat = ggeo->getNumMergedMesh(); 
     for(unsigned repeatIdx=0 ; repeatIdx < numRepeat ; repeatIdx++)
@@ -102,7 +100,7 @@ void CSG_GGeo_Convert::convert_()
         if(ok->isEnabledMergedMesh(repeatIdx))
         {
             LOG(error) << "proceeding with convert for repeatIdx " << repeatIdx ;  
-            convert_(reverse ? numRepeat - 1 - repeatIdx : repeatIdx ); 
+            convertSolid(reverse ? numRepeat - 1 - repeatIdx : repeatIdx ); 
         }
         else
         {
@@ -134,7 +132,7 @@ void CSG_GGeo_Convert::addInstances(unsigned repeatIdx )
 
 
 
-CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
+CSGSolid* CSG_GGeo_Convert::convertSolid( unsigned repeatIdx )
 {
     unsigned nmm = ggeo->getNumMergedMesh(); 
     assert( repeatIdx < nmm ); 
@@ -146,6 +144,7 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
     std::string rlabel = CSGSolid::MakeLabel('r',repeatIdx) ; 
 
     LOG(info)
+        << "CSG_GGeo_Convert::convertSolid"
         << " repeatIdx " << repeatIdx 
         << " nmm " << nmm
         << " numPrim " << numPrim
@@ -164,7 +163,7 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
         unsigned globalPrimIdx_0 = foundry->getNumPrim() ; 
         assert( globalPrimIdx == globalPrimIdx_0 ); 
 
-        CSGPrim* prim = convert_(comp, primIdx); 
+        CSGPrim* prim = convertPrim(comp, primIdx); 
         bb.include_aabb( prim->AABB() );
 
         unsigned sbtIdx = prim->sbtIndexOffset() ; 
@@ -187,19 +186,27 @@ CSGSolid* CSG_GGeo_Convert::convert_( unsigned repeatIdx )
 }
 
 
-CSGPrim* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx )
+/**
+CSG_GGeo_Convert::convertPrim
+--------------------------------
+
+on adding a prim the node/tran/plan offsets are captured into the Prim 
+from the sizes of the foundry vectors
+
+TODO: suspect tran and plan offsets are not used, and should be removed
+as are always using absolute tran and plan addressing 
+
+**/
+
+CSGPrim* CSG_GGeo_Convert::convertPrim(const GParts* comp, unsigned primIdx )
 {
     unsigned numPrim = comp->getNumPrim();
     assert( primIdx < numPrim ); 
     unsigned numParts = comp->getNumParts(primIdx) ;
     unsigned meshIdx = comp->getMeshIndex(primIdx);    // aka lvIdx
 
-    // on adding a prim the node/tran/plan offsets are captured into the Prim 
-    // from the sizes of the foundry vectors
-
-    // TODO: suspect tran and plan offsets are not used, and should be removed
-    // as are always using absolute tran and plan addressing 
-    // also "meshIdx" is non-essential metadata, hence it should not be an argument to addPrim
+    assert( foundry->last_added_solid ); 
+    bool is_r8 = foundry->last_added_solid->labelMatch("r8"); 
 
     int nodeOffset_ = -1 ; 
     CSGPrim* prim = foundry->addPrim(numParts, nodeOffset_ );   
@@ -207,20 +214,63 @@ CSGPrim* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx )
     assert(prim) ; 
 
     AABB bb = {} ;
+
+    //bool kludge_skip_aabb = false ; 
+   
     for(unsigned partIdxRel=0 ; partIdxRel < numParts ; partIdxRel++ )
     {
-        CSGNode* n = convert_(comp, primIdx, partIdxRel); 
-        bb.include_aabb( n->AABB() );   // HMM: what about big-small composites ?
+        CSGNode* n = convertNode(comp, primIdx, partIdxRel); 
+        float* naabb = n->AABB();  
+
+        if(is_r8)
+        {
+            std::cout 
+                << "CSG_GGeo_Convert::convertPrim is_r8" 
+                << " primIdx " << std::setw(3) << primIdx 
+                << " partIdxRel " << std::setw(3) << partIdxRel
+                << AABB::Desc(naabb)
+                << std::endl 
+                ;   
+        } 
+
+        bb.include_aabb( naabb );  
+
+
+/*
+        kludge_skip_aabb = is_r8 && *(naabb+0) < -17810.00 ; 
+
+        if(!kludge_skip_aabb)
+        { 
+            bb.include_aabb( naabb );  
+        }
+        else
+        {
+            std::cout 
+                << "CSG_GGeo_Convert::convertPrim kludge_skip_aabb " 
+                << std::endl
+                ; 
+        }
+*/
+
+
     }
-    prim->setAABB( bb.data() ); 
+
+
+    const float* bb_data = bb.data(); 
+
+    if(is_r8)
+    {
+        std::cout << "is_r8.Prim.AABB " << AABB::Desc(bb_data) << std::endl ; 
+    }       
+
+    prim->setAABB( bb_data ); 
 
     return prim ; 
 }
 
-
 /**
-CSG_GGeo_Convert::convert_
-----------------------------
+CSG_GGeo_Convert::convertNode
+-------------------------------
 
 primIdx
     0:numPrim-1 identifying the Prim (aka layer) within the composite 
@@ -229,14 +279,20 @@ partIdxRel
     relative part(aka node) index 0:numPart-1 within the Prim, used together with 
     the partOffset of the Prim to yield the absolute partIdx within the composite
 
+
+Note that repeatedly getting the same gtran for different part(aka node) 
+will repeatedly add that same transform to the foundry even when its the identity transform.
+So this is profligate in duplicated transforms.
+
+Observing many complemented nodes that appear should not be complemented, even in some 
+single node Prim such as "r1/4" and 31 node "r8/0".
+
 **/
 
 
-
-
-CSGNode* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx, unsigned partIdxRel )
+CSGNode* CSG_GGeo_Convert::convertNode(const GParts* comp, unsigned primIdx, unsigned partIdxRel )
 {
-    //unsigned repeatIdx = comp->getRepeatIndex();  // set in GGeo::deferredCreateGParts
+    unsigned repeatIdx = comp->getRepeatIndex();  // set in GGeo::deferredCreateGParts
     unsigned partOffset = comp->getPartOffset(primIdx) ;
     unsigned partIdx = partOffset + partIdxRel ;
     unsigned idx = comp->getIndex(partIdx);
@@ -245,54 +301,42 @@ CSGNode* CSG_GGeo_Convert::convert_(const GParts* comp, unsigned primIdx, unsign
     std::string tag = comp->getTag(partIdx); 
     unsigned tc = comp->getTypeCode(partIdx);
 
-    unsigned gtran = 0 ; 
     const Tran<float>* tv = nullptr ; 
-
-    if( splay != 0.f )    // splaying currently prevents the real transform from being used 
+    unsigned gtran = comp->getGTransform(partIdx);
+    if( gtran > 0 )
     {
-        tv = Tran<float>::make_translate(0.f, float(primIdx)*splay, float(partIdxRel)*splay ); 
+        glm::mat4 t = comp->getTran(gtran-1,0) ;
+        glm::mat4 v = comp->getTran(gtran-1,1); 
+        tv = new Tran<float>(t, v); 
     }
-    else
-    {
-        gtran = comp->getGTransform(partIdx);
-        if( gtran > 0 )
-        {
-            glm::mat4 t = comp->getTran(gtran-1,0) ;
-            glm::mat4 v = comp->getTran(gtran-1,1); 
-            tv = new Tran<float>(t, v); 
-        }
-    }
-
-    // Note that repeatedly getting the same gtran for different part(aka node) 
-    // will repeatedly add that same transform to the foundry even when its the identity transform.
-    // So this is profligate in duplicated transforms.
 
     unsigned tranIdx = tv ?  1 + foundry->addTran(*tv) : 0 ; 
 
     const float* param = comp->getPartValues(partIdx, 0, 0 );  
-
-    /*
-    LOG(info) 
-        << CSGNode::Addr(repeatIdx, primIdx, partIdxRel )
-        << " partIdx " << std::setw(3) << partIdx
-        << " GTransform " << std::setw(3) << gtran
-    //    << " param: " << CSGNode::Desc( param, 6 ) 
-        << " tranIdx " << std::setw(4) << tranIdx 
-        << " tv " <<  ( tv ? tv->brief() : "-" )  
-        ; 
-
-    */
+    bool complement = comp->getComplement(partIdx);
 
     const float* aabb = nullptr ;  
     CSGNode* n = foundry->addNode(CSGNode::Make(tc, param, aabb ));
     n->setIndex(partIdx); 
     n->setAABBLocal(); 
     n->setTransform(tranIdx); 
+    n->setComplement(complement); 
+
+    if(complement) 
+        std::cout 
+            << "CSG_GGeo_Convert::convertNode"
+            << " repeatIdx " << repeatIdx 
+            << " primIdx " << primIdx 
+            << " partIdxRel " << partIdxRel 
+            << " complement " << complement
+            << std::endl 
+            ; 
+
+    assert( n->complement() == complement ); 
 
     if(tranIdx > 0 )
     {    
         const qat4* q = foundry->getTran(tranIdx-1u) ;
-
         q->transform_aabb_inplace( n->AABB() );
     }
 
