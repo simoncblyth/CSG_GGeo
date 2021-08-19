@@ -23,7 +23,15 @@ struct CSG_GGeo_Convert
     CSG_GGeo_Convert(CSGFoundry* foundry, const GGeo* ggeo ) ; 
     void init();
 
-    void convert(int repeatIdx=-1,  int primIdx=-1, int partIdxRel=-1 );
+    void convert();   
+
+    // collect inputs for creating GPU boundary and scintillation textures 
+    void convertBndLib() ;
+    void convertScintillatorLib() ;
+    void convertGeometry(int repeatIdx=-1,  int primIdx=-1, int partIdxRel=-1 );
+
+
+    // below all for geometry conversion 
 
     void convertAllSolid();
     CSGSolid* convertSolid(unsigned repeatIdx );

@@ -4,6 +4,7 @@
 
 #include "SStr.hh"
 #include "SSys.hh"
+#include "NP.hh"
 #include "NGLMExt.hpp"
 #include "GLMFormat.hpp"
 
@@ -13,6 +14,8 @@
 #include "GGeoLib.hh"
 #include "GParts.hh"
 #include "GMergedMesh.hh"
+#include "GBndLib.hh"
+#include "GScintillatorLib.hh"
 
 #include "sutil_vec_math.h"
 #include "CSGFoundry.h"
@@ -53,9 +56,14 @@ void CSG_GGeo_Convert::init()
        ;
 }
 
+void CSG_GGeo_Convert::convert()
+{
+    convertGeometry(); 
+    convertBndLib(); 
+    convertScintillatorLib(); 
+}
 
-
-void CSG_GGeo_Convert::convert(int repeatIdx,  int primIdx, int partIdxRel )
+void CSG_GGeo_Convert::convertGeometry(int repeatIdx,  int primIdx, int partIdxRel ) // all -1 is the default that calls convertAllSolid
 {
 
     if( repeatIdx > -1 || primIdx > -1 || partIdxRel > -1 )
@@ -92,7 +100,7 @@ void CSG_GGeo_Convert::convert(int repeatIdx,  int primIdx, int partIdxRel )
     }
 } 
 
-void CSG_GGeo_Convert::convertAllSolid()
+void CSG_GGeo_Convert::convertAllSolid()  // default 
 {
     unsigned numRepeat = ggeo->getNumMergedMesh(); 
     for(unsigned repeatIdx=0 ; repeatIdx < numRepeat ; repeatIdx++)
@@ -108,6 +116,26 @@ void CSG_GGeo_Convert::convertAllSolid()
         }
     }
 }
+
+void CSG_GGeo_Convert::convertBndLib() 
+{
+    GBndLib* blib = ggeo->getBndLib(); 
+    blib->createDynamicBuffers();  // hmm perhaps this is done already on loading now ?
+
+    NP* bnd = blib->getBuf(); 
+    const std::vector<std::string>& bndnames = blib->getNameList(); 
+    bnd->set_meta( bndnames );  
+
+    foundry->bnd = bnd ; 
+}
+
+void CSG_GGeo_Convert::convertScintillatorLib() 
+{
+    GScintillatorLib* slib = ggeo->getScintillatorLib(); 
+    NP* icdf = slib->getBuf();   // assuming 1 scintillator
+    foundry->icdf = icdf ; 
+}
+
 
 void CSG_GGeo_Convert::addInstances(unsigned repeatIdx )
 {
